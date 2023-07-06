@@ -54,7 +54,7 @@ class abilities(commands.Cog):
         @discord.ui.button(label="Point Buy", style=discord.ButtonStyle.green, disabled = False)
         async def point_buy(self, interaction: discord.Interaction, Button: discord.ui.Button):
             # Edits the original message accordingly
-            await interaction.response.edit_message(content="Here is the point cost chart: ")
+            await interaction.response.edit_message(content="Please select which ability you want to increment/ decrement", view=abilities.PointBuy(interaction, Button.label))
     
     # Creates a class for Rolling Stats
     class RollingStats(discord.ui.View):
@@ -116,6 +116,166 @@ class abilities(commands.Cog):
             self.totals = totals
 
             await interaction.response.edit_message(content=f"{response}\nDo you wish to reroll?", view=self)
+
+    # Creates a class for Point Buy
+    class PointBuy(discord.ui.View):
+        def __init__(self, interaction: discord.Interaction, ability_type):
+            super().__init__(timeout=None)
+            self.ability_type = ability_type
+            self.abilities = ["Str", "Dex", "Con", "Int", "Wis", "Cha"]
+            self.points = 27
+
+        # Creates buttons for the various stats
+        @discord.ui.button(label="Str | 8", style=discord.ButtonStyle.blurple, disabled=False, row=1)
+        async def str(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Dex | 8", style=discord.ButtonStyle.blurple, disabled=False, row=2)
+        async def dex(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Con | 8", style=discord.ButtonStyle.blurple, disabled=False, row=3)
+        async def con(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Int | 8", style=discord.ButtonStyle.blurple, disabled=False, row=1)
+        async def int(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Wis | 8", style=discord.ButtonStyle.blurple, disabled=False, row=2)
+        async def wis(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Cha | 8", style=discord.ButtonStyle.blurple, disabled=False, row=3)
+        async def cha(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            await self.update_button(interaction, Button)
+
+        # Creates button for the total point
+        @discord.ui.button(label="27", style=discord.ButtonStyle.grey, disabled=True, row=1)
+        async def total(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            print("total")
+
+        # Creates buttons for incrementing or decrementing
+        @discord.ui.button(label="+", style=discord.ButtonStyle.green, disabled=False, row=2)
+        async def plus(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Loop through the children to see which ability is selected
+            for i in self.children:
+                # Check it's green (selected)
+                if i.style == discord.ButtonStyle.green and i.label != "+":
+                    # Split the label
+                    label = i.label.split(" | ")
+                    # Assign the number and add one
+                    num = int(label[1]) + 1
+                    # Performs check to see if it's 15
+                    if num == 15:
+                        self.points -= 2
+                    else:
+                        self.points -= 1
+                    # Reassign the label
+                    i.label = f"{label[0]} | {num}"
+                    # Update the button
+                    await self.update_view(interaction, Button)
+                    return
+        @discord.ui.button(label="-", style=discord.ButtonStyle.red, disabled=False, row=3)
+        async def subtract(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Loop through the children to see which ability is selected
+            for i in self.children:
+                # Check it's green (selected)
+                if i.style == discord.ButtonStyle.green and i.label != "+":
+                    # Split the label
+                    label = i.label.split(" | ")
+                    # Assign the number and subtract one
+                    num = int(label[1]) - 1
+                    # Performs check to see if it's 15
+                    if num + 1 == 15:
+                        self.points += 2
+                    else:
+                        self.points += 1
+                    # Reassign the label
+                    i.label = f"{label[0]} | {num}"
+                    # Update the button
+                    await self.update_view(interaction, Button)
+                    return
+        
+        # Creates button for reseting
+        @discord.ui.button(label="Reset", style=discord.ButtonStyle.red, disabled=False, row=4)
+        async def reset(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Loops through the buttons
+            for i in self.children:
+                try:
+                    ability_label = Button.label.split(" | ")[0]
+                except:
+                    ability_label = i.label
+
+                ###
+                # TO DO - RESET button does not reset the ability buttons. Why?
+
+                # Check if the button is an ability or a score
+                if ability_label in self.abilities:
+                    i.style = discord.ButtonStyle.blurple
+                    # Reassign the label
+                    i.label = f"{ability_label[0]} | 8"
+                    # Update the button
+                if i.label == str(self.points):
+                    i.label = "27"
+            # Reset points
+            self.points = 27
+            await interaction.response.edit_message(view=self)
+
+        # A function for updating the buttons
+        async def update_button(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            ability_label = Button.label.split(" | ")[0]
+            # Check if the button is an ability or a score
+            if ability_label in self.abilities:
+                # Loop through the children of the view
+                for i in self.children:
+                    try:
+                        label = i.label.split(" | ")[0]
+                    except:
+                        label = i.label
+                    # Check if it's an ability
+                    if label in self.abilities:
+                        # If it's not the clicked button, turn it green
+                        if i != Button:
+                            i.style = discord.ButtonStyle.blurple
+            await self.update_view(interaction, Button)
+
+        # A function for updating the view
+        async def update_view(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Updates the total
+            self.children[6].label = f"{self.points}"
+            # Checks if all the points have been used
+            if self.points == 0:
+                await interaction.response.edit_message(content=f"Your ability scores have been established...", view=None)
+                await abilities.dict_to_msg(abilities, interaction, self.default_scores, self.ability_type)
+            else:
+                # Edit the message with the updated view
+                await interaction.response.edit_message(view=self)
 
     # Creates a class for the Standard Array view
     class AbilityButtons(discord.ui.View):
