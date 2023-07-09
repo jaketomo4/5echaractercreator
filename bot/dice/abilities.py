@@ -16,12 +16,15 @@ class abilities(commands.Cog):
     # Creates the commands for establishing ability scores
     @app_commands.command(name="abilities", description="Establish your ability scores!")
     async def abilities(self, interaction: discord.Interaction):
-        # Adds a view for the user to see what they can do
-        await interaction.response.send_message(content=f"Select what you'd like to do:", view=self.AbilityScores(interaction), ephemeral=True)
-        # Calls the check roles function
-        await self.check_roles(interaction)
+        # Checks if the user has ability scores already
+        check = await self.check_roles(interaction)
+        if check:
+            await interaction.response.send_message(content=f"You already have your ability scores established, would you like to reset them?", view=self.ResetAbilities(interaction), ephemeral=True)
+        else:
+            # Adds a view for the user to see what they can do to establish abilities
+            await interaction.response.send_message(content=f"Select what you'd like to do:", view=self.AbilityScores(interaction), ephemeral=True)
 
-    # Creates a function for checking the roles and removing them accordingly if the user uses this 
+    # Creates a function for checking the roles
     async def check_roles(self, interaction: discord.Interaction):
         # Assigns the user's roles to a variable
         roles = interaction.user.roles
@@ -29,7 +32,34 @@ class abilities(commands.Cog):
         for role in roles:
             # Checks if they are the "ability score" colour
             if role.color == discord.colour.Colour(0x0000FF):
+                return True
+        return False
+    
+    # Creats a function for removing ability roles
+    async def remove_roles(self, interaction: discord.Interaction):
+        # Assigns the user's roles to a variable
+        roles = interaction.user.roles
+        # Loops through the user's roles
+        for role in roles:
+            # Checks if they are the "ability score" colour
+            if role.color == discord.colour.Colour(0x0000FF):
+                # Removes them
                 await interaction.user.remove_roles(role, atomic=True)
+
+    # Creates a class for the confirmation of resetting abilities
+    class ResetAbilities(discord.ui.View):
+        def __init__(self, interaction: discord.Interaction):
+            super().__init__(timeout=None)
+
+        @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
+        async def accept(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # If the user accepts, continue through the abilities as intended
+            await interaction.response.edit_message(content=f"Select what you'd like to do:", view=abilities.AbilityScores(interaction))
+            await abilities.remove_roles(abilities, interaction)
+
+        @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
+        async def decline(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            await interaction.response.edit_message(content=f"Your ability scores have been unchanged.", view=None)
 
     # Creates a class for the various ability buttons
     class AbilityScores(discord.ui.View):
@@ -121,9 +151,19 @@ class abilities(commands.Cog):
     class PointBuy(discord.ui.View):
         def __init__(self, interaction: discord.Interaction, ability_type):
             super().__init__(timeout=None)
+            self.stat = ""
             self.ability_type = ability_type
             self.abilities = ["Str", "Dex", "Con", "Int", "Wis", "Cha"]
             self.points = 27
+            # Creates a dictionary for the values
+            self.default_scores = {
+                "Strength": 10,
+                "Dexterity": 10,
+                "Constitution": 10,
+                "Intelligence": 10,
+                "Wisdom": 10,
+                "Charisma": 10
+            }
 
         # Creates buttons for the various stats
         @discord.ui.button(label="Str | 8", style=discord.ButtonStyle.blurple, disabled=False, row=1)
@@ -133,6 +173,8 @@ class abilities(commands.Cog):
                 Button.style = discord.ButtonStyle.green
             else:
                 Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label.split(" | ")[0]
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Dex | 8", style=discord.ButtonStyle.blurple, disabled=False, row=2)
         async def dex(self, interaction: discord.Interaction, Button: discord.ui.Button):
@@ -141,6 +183,8 @@ class abilities(commands.Cog):
                 Button.style = discord.ButtonStyle.green
             else:
                 Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label.split(" | ")[0]
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Con | 8", style=discord.ButtonStyle.blurple, disabled=False, row=3)
         async def con(self, interaction: discord.Interaction, Button: discord.ui.Button):
@@ -149,6 +193,8 @@ class abilities(commands.Cog):
                 Button.style = discord.ButtonStyle.green
             else:
                 Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label.split(" | ")[0]
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Int | 8", style=discord.ButtonStyle.blurple, disabled=False, row=1)
         async def int(self, interaction: discord.Interaction, Button: discord.ui.Button):
@@ -157,6 +203,8 @@ class abilities(commands.Cog):
                 Button.style = discord.ButtonStyle.green
             else:
                 Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label.split(" | ")[0]
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Wis | 8", style=discord.ButtonStyle.blurple, disabled=False, row=2)
         async def wis(self, interaction: discord.Interaction, Button: discord.ui.Button):
@@ -165,6 +213,8 @@ class abilities(commands.Cog):
                 Button.style = discord.ButtonStyle.green
             else:
                 Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label.split(" | ")[0]
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Cha | 8", style=discord.ButtonStyle.blurple, disabled=False, row=3)
         async def cha(self, interaction: discord.Interaction, Button: discord.ui.Button):
@@ -173,6 +223,8 @@ class abilities(commands.Cog):
                 Button.style = discord.ButtonStyle.green
             else:
                 Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label.split(" | ")[0]
             await self.update_button(interaction, Button)
 
         # Creates button for the total point
@@ -181,7 +233,7 @@ class abilities(commands.Cog):
             print("total")
 
         # Creates buttons for incrementing or decrementing
-        @discord.ui.button(label="+", style=discord.ButtonStyle.green, disabled=False, row=2)
+        @discord.ui.button(label="+", style=discord.ButtonStyle.green, disabled=True, row=2)
         async def plus(self, interaction: discord.Interaction, Button: discord.ui.Button):
             # Loop through the children to see which ability is selected
             for i in self.children:
@@ -201,7 +253,7 @@ class abilities(commands.Cog):
                     # Update the button
                     await self.update_view(interaction, Button)
                     return
-        @discord.ui.button(label="-", style=discord.ButtonStyle.red, disabled=False, row=3)
+        @discord.ui.button(label="-", style=discord.ButtonStyle.red, disabled=True, row=3)
         async def subtract(self, interaction: discord.Interaction, Button: discord.ui.Button):
             # Loop through the children to see which ability is selected
             for i in self.children:
@@ -227,25 +279,49 @@ class abilities(commands.Cog):
         async def reset(self, interaction: discord.Interaction, Button: discord.ui.Button):
             # Loops through the buttons
             for i in self.children:
-                try:
-                    ability_label = Button.label.split(" | ")[0]
-                except:
+                if "|" in i.label:
+                    ability_label = i.label.split(" | ")[0]
+                else:
                     ability_label = i.label
-
-                ###
-                # TO DO - RESET button does not reset the ability buttons. Why?
-
                 # Check if the button is an ability or a score
                 if ability_label in self.abilities:
                     i.style = discord.ButtonStyle.blurple
                     # Reassign the label
-                    i.label = f"{ability_label[0]} | 8"
+                    i.label = f"{ability_label} | 8"
                     # Update the button
                 if i.label == str(self.points):
                     i.label = "27"
+                # Set the + and - buttons to their original state
+                if i.label == "+":
+                    i.disabled = True
+                if i.label == "-":
+                    i.disabled = False
             # Reset points
             self.points = 27
             await interaction.response.edit_message(view=self)
+        
+        # Creates button for reseting
+        @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, disabled=True, row=4)
+        async def confirm(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Loops through the buttons
+            for i in self.children:
+                if "|" in i.label:
+                    # Checks what ability is which and assigns accordingly
+                    match (i.label.split(" | ")[0]):
+                        case "Str":
+                            self.default_scores["Strength"] = int(i.label.split(" | ")[1])
+                        case "Dex":
+                            self.default_scores["Dexterity"] = int(i.label.split(" | ")[1])
+                        case "Con":
+                            self.default_scores["Constitution"] = int(i.label.split(" | ")[1])
+                        case "Int":
+                            self.default_scores["Intelligence"] = int(i.label.split(" | ")[1])
+                        case "Wis":
+                            self.default_scores["Wisdom"] = int(i.label.split(" | ")[1])
+                        case "Cha":
+                            self.default_scores["Charisma"] = int(i.label.split(" | ")[1])
+            await interaction.response.edit_message(content=f"Your ability scores have been established...", view=None)
+            await abilities.dict_to_msg(abilities, interaction, self.default_scores, self.ability_type)
 
         # A function for updating the buttons
         async def update_button(self, interaction: discord.Interaction, Button: discord.ui.Button):
@@ -260,22 +336,49 @@ class abilities(commands.Cog):
                         label = i.label
                     # Check if it's an ability
                     if label in self.abilities:
-                        # If it's not the clicked button, turn it green
+                        # If it's not the clicked button, turn it blurple
                         if i != Button:
                             i.style = discord.ButtonStyle.blurple
             await self.update_view(interaction, Button)
 
         # A function for updating the view
         async def update_view(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            for i in self.children:
+                # Checks the selected ability
+                if i.label.startswith(self.stat):
+                    # Is the label selected?
+                    if i.style == discord.ButtonStyle.green:
+                        try:
+                            score = int(i.label.split(" | ")[1])
+                        except:
+                            score = None
+                        if score != None:
+                            # Updates the + button accordingly
+                            if score == 15:
+                                self.children[7].disabled = True
+                            else:
+                                self.children[7].disabled = False
+                            # Updates the - button accordingly
+                            if score == 8:
+                                self.children[8].disabled = True
+                            else:
+                                self.children[8].disabled = False
+                            # Perform a check to see if the threshold is about to go over the total
+                            if int(i.label.split(" | ")[1]) == 14 and self.points == 1:
+                                self.children[7].disabled = True
+                    else:
+                        # Since the label has been deselected, set + and - to original
+                        self.children[7].disabled = True
+                        self.children[8].disabled = True
             # Updates the total
             self.children[6].label = f"{self.points}"
-            # Checks if all the points have been used
+            # Updates the confirm button
             if self.points == 0:
-                await interaction.response.edit_message(content=f"Your ability scores have been established...", view=None)
-                await abilities.dict_to_msg(abilities, interaction, self.default_scores, self.ability_type)
+                self.children[10].disabled = False
             else:
-                # Edit the message with the updated view
-                await interaction.response.edit_message(view=self)
+                self.children[10].disabled = True          
+            # Edit the message with the updated view
+            await interaction.response.edit_message(view=self)
 
     # Creates a class for the Standard Array view
     class AbilityButtons(discord.ui.View):
