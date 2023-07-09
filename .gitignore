@@ -1,0 +1,2 @@
+# We don't want the Bot token to be on the internet
+config.json
