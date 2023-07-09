@@ -1,7 +1,6 @@
 # Standard Imports
 import os
 import json
-import time
 from colorama import Fore
 
 # Third-Party Imports
@@ -15,7 +14,8 @@ class Client(commands.Bot):
         # Define all the cogs
         self.cog_list = [
             "dice.d20",
-            "dice.abilities"
+            "ability_scores.abilities",
+            "races.races"
             ]
 
     async def setup_hook(self):
