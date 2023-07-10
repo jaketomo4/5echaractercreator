@@ -1,6 +1,7 @@
 # Standard Imports
 import requests
 import json
+import math
 
 # Third-Party Imports
 import discord
@@ -22,7 +23,6 @@ class races(commands.Cog):
     async def race(self, interaction: discord.Interaction):
         # Calls the function to get all the races and subraces
         await self.json_get()
-        # Creates a variables for the select menu class to assign the values of the dictionaries accordingly
         await interaction.response.send_message(content=f"What race would you like to play as?", view=self.SelectView(interaction, self.joint), ephemeral=True)
 
     # A function for getting the json from the 5etools github
@@ -70,31 +70,36 @@ class races(commands.Cog):
 
         # Joins the dictionaries
         joint = races | subraces
-        self.joint = sorted(joint.keys()) # Is this why it's now a list???
+        self.joint = sorted(joint.keys())
 
     # Create a Select Menu class
     class SelectRace(discord.ui.Select):
-        def __init__(self, interaction: discord.Interaction, joint_dict):
+        def __init__(self, interaction: discord.Interaction, joint_dict, page):
             # Stores the passed in variables
             self.interaction = interaction
             self.joint = joint_dict
-            # Sets the displayed values
-            self.display = None
             options = [discord.SelectOption(label="default")]
+            self.page = page
             super().__init__(placeholder="Races...", options=options, row=0)
             self.initiate_options()
         
         def initiate_options(self):
             # Clear the default options
             self.options.clear()
-            # Create a count variable
-            print(type(self.joint)) # Why is this a list? Needs to be dictionary
+            # Make a count for the options
             count = 0
-            for i in self.joint:
+            # Make an index for the "dictionary"
+            index = (self.page - 1) * 25
+            # Set the end index of the "dictionary"
+            end = self.page * 25
+            # Calculate if the end index is greater than the total number of races/ subraces. If so, set it to the length of the "dictionary"
+            if end > len(self.joint):
+                end = len(self.joint)
+            while index != end:
+                self.options.append(discord.SelectOption(label=f"{self.joint[index]}"))
+                # Add 1 to the count/ index 
                 count += 1
-                self.options.append(discord.SelectOption(label=f"{i['name']}"))
-                if count == 25:
-                    break
+                index += 1
 
         # Called when a value is selected
         async def callback(self, interaction: discord.Interaction):
@@ -104,13 +109,13 @@ class races(commands.Cog):
     
     # Create a Select Menu View class to allow for discord to view it
     class SelectView(discord.ui.View):
-        def __init__(self, interaction: discord.Interaction, joint_dict):
+        def __init__(self, interaction: discord.Interaction, joint_dict, page: int = 1):
             super().__init__()
-            self.select = races.SelectRace(interaction, joint_dict)
+            self.select = races.SelectRace(interaction, joint_dict, page)
             self.add_item(self.select)
-            # Creates a variables for tracking what number of races are being displayed in the select menu (max of 25 options, 24 races and 1 "more...")
-            self.page = 1
             self.dict_len = len(joint_dict)
+            # Creates a variables for the select menu class to assign the values of the dictionaries accordingly
+            self.page = page
             # Creates a variable for the joint dictionary
             self.joint_dict = joint_dict
         
@@ -131,7 +136,7 @@ class races(commands.Cog):
                 # Checks to see if the child is buttons (try) or SelectView (except)
                 try:
                     # If the child is previous
-                    if i.emoji == "⬅️":
+                    if i.emoji.name == "⬅️":
                         # Check the page count and make the button function correctly
                         if self.page == 1:
                             i.style = discord.ButtonStyle.red
@@ -140,23 +145,18 @@ class races(commands.Cog):
                             i.style = discord.ButtonStyle.green
                             i.disabled = False
                     # If the child is next
-                    if i.emoji == "➡️":
-                        # Check the page count againt the length of the dictionary against the modulus of max options for SelectMenus (minus one) and make the button function correctly
-                        if self.page == ((self.dict_len % 25) - 1):
+                    if i.emoji.name == "➡️":
+                        # Check the page count againt the length of the dictionary divided by number of max entries per select menu "page", rounded up (to allow for displaying all) and make the button function correctly
+                        if self.page == (math.ceil(self.dict_len / 25)):
                             i.style = discord.ButtonStyle.red
                             i.disabled = True
                         else:
                             i.style = discord.ButtonStyle.green
                             i.disabled = False
                 except:
-                    temp_dict = {}
-                    count = (self.page - 1) * 25
-                    end = self.page * 25
-                    while count != end:
-                        name = self.joint_dict[count]
-                        temp_dict[name] = self.joint_dict[name]
-                        count += 1
-                    self.select.display = temp_dict
+                    self.select.page = self.page
+                    self.select.initiate_options()
+            await interaction.response.edit_message(view=self)
 
 # Sets up the cog for the bot to register it
 async def setup(client: commands.Bot) -> None:
