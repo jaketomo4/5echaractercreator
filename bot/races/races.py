@@ -21,9 +21,37 @@ class races(commands.Cog):
     # Establishes the command related to the cog
     @app_commands.command(name="race", description="Select which race you want to play!")
     async def race(self, interaction: discord.Interaction):
-        # Calls the function to get all the races and subraces
-        await self.json_get()
-        await interaction.response.send_message(content=f"What race would you like to play as?", view=self.SelectView(interaction, self.joint), ephemeral=True)
+        # Assign an ability role checker
+        check = await self.check_abilities(interaction)
+        if not check:
+            await interaction.response.send_message(content=f"You need to assign your abilities. Please use **/abilities** to do so.", view=self.AbilityMessage(interaction), ephemeral=True)
+        else:
+            # Calls the function to get all the races and subraces
+            json_dict = await self.json_get()
+            # Tidy the dictionary up
+            await self.tidy_dict(json_dict)
+            await interaction.response.send_message(content=f"What race would you like to play as?", view=self.SelectView(interaction, self.joint), ephemeral=True)
+
+    # Creates a function for checking the roles
+    async def check_abilities(self, interaction: discord.Interaction):
+        # Assigns the user's roles to a variable
+        roles = interaction.user.roles
+        # Loops through the user's roles
+        for role in roles:
+            # Checks if they are the "ability score" colour
+            if role.color == discord.colour.Colour(0x0000FF):
+                return True
+        return False
+    
+    # Creates a class for the confirmation of needing to sort abilities
+    class AbilityMessage(discord.ui.View):
+        def __init__(self, interaction: discord.Interaction):
+            super().__init__(timeout=None)
+
+        @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+        async def accept(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # If the user accepts, continue through the abilities as intended
+            await interaction.response.edit_message(content="Roll **/abilities**", view=None)
 
     # A function for getting the json from the 5etools github
     async def json_get(self):
@@ -32,7 +60,7 @@ class races(commands.Cog):
         # Uses loads for the data, not load for the file path - uses .text for the input
         json_dict = json.loads(f.text)
         # Call the tidy dictionary function
-        await self.tidy_dict(json_dict)
+        return json_dict
 
     # A function for making nicer dictionaries
     async def tidy_dict(self, json_dict):
@@ -42,7 +70,7 @@ class races(commands.Cog):
         
         # Loops through the list of dictionaries and creates a dictionary for races
         for i in races:
-            name = i.pop("name")
+            name = f"{i['name']} ({i['source']})"
             self.races[name] = i
 
         # Loops through the list of dictionaries and creates a dictionary for subraces
@@ -50,27 +78,133 @@ class races(commands.Cog):
             # Try to see if the subrace is a name specific or if it is related to abilities
             try:
                 # Create variables of the name and racename (to allow the try-except to work properly)
-                sub_name = i.pop("name")
-                race_name = i.pop("raceName")
+                sub_name = i["name"]
+                race_name = i["raceName"]
                 # Add to the dictionary with race name and subrace
-                name = f"{race_name} ({sub_name})"
+                name = f"{race_name} - {sub_name} ({i['source']})"
                 self.subraces[name] = i
             except:
                 # If it is a variant subrace, note such
-                name = f"{i['raceName']} (Variant)"
+                name = f"{i['raceName']} - Variant ({i['source']})"
                 self.subraces[name] = i
         
         await self.join_dict()
     
     # A function for joining the dictionaries
     async def join_dict(self):
-        # Assign local variables
-        races = self.races
-        subraces = self.subraces
-
-        # Joins the dictionaries
-        joint = races | subraces
+        # Join the dictionaries
+        joint = self.races | self.subraces
         self.joint = sorted(joint.keys())
+
+    # A function for taking the selected class and accessing the dictionary
+    async def dict_access(self, interaction, option):
+        # Obtain the dictionary
+        json_dict = await self.json_get(self)
+        # Create a variable for the entry
+        entry = {}
+        # Bypass the option coming through as a list
+        option = option[0]
+        # Assign the name from splitting on the -
+        split_list = option.split(" - ")
+        # Check if the option is a subrace
+        if "-" in option:
+            name = split_list[0]
+            # Assign the raceName from split list and then splitting on the ( and removing the whitespace at the end
+            raceName = (split_list[1].split("(")[0])[:-1]
+            # Loop through the subraces
+            for i in json_dict["subrace"]:
+                # Try to see if the subrace has a name
+                try:
+                    # Check if i is equal to what the player entered
+                    if i.get('name') == raceName:
+                        # Assign the entry dictionary as the correct dictionary from the web
+                        entry = i
+                        break
+                except(KeyError):
+                    if raceName in i.values():
+                        # Assign the entry dictionary as the correct dictionary from the web
+                        entry = i
+                        break
+        else:
+            name = (split_list[0].split("(")[0])[:-1]
+            # Loop through the races
+            for i in json_dict["race"]:
+                if i.get('name') == name:
+                    # Assign the entry dictionary as the correct dictionary from the web
+                    entry = i
+                    break
+        # Throw the entry into the function for establishing important race features
+        await self.race_features(self, interaction, option, entry)
+
+    # Create the function for establishing the race features
+    async def race_features(self, interaction: discord.Interaction, option, entry):
+        print(entry)
+        # Confirm what the user selected
+        await interaction.channel.send(content=f"{interaction.user.mention} has chosen to be a **{option}**")
+        # Assign lists for ability increase
+        skill_list = []
+        score_list = []
+        # Check if the entry has ability score increase
+        #try:
+        # Create a dictionary for the racial ASI
+        asi = entry.get('ability')[0]
+        # Loop through the dictionary keys
+        for i in asi.keys():
+            # Add the skill to the list
+            skill_list.append(i)
+            # Add the score increase to the list
+            score_list.append(asi[i])
+        await self.ability_increase(self, interaction, skill_list, score_list)
+        #except:
+            #print("no ability")
+        await self.race_role(self, interaction, option)
+
+    # Create the function for adding to the user's abilities
+    async def ability_increase(self, interaction: discord.Interaction, skill, score):
+        # Assigns the user's roles to a variable
+        roles = interaction.user.roles
+        # Assign the server
+        server = interaction.guild
+        # Create lists for abilities and numbers
+        ability = []
+        number = []
+        # Creates a count
+        count = 0
+        # Loop through the skills
+        for i in skill:
+            # Add the skills and scores to the relevant lists
+            ability.append(i)
+            number.append(int(score[count])) 
+            count += 1
+        # Loops through the user's roles
+        for role in roles:
+            # Checks if they are the "ability score" colour
+            if role.color == discord.colour.Colour(0x0000FF):
+                # Removes the role
+                await interaction.user.remove_roles(role, atomic=True)
+                # Create a list from the whitespace split
+                ws_list = role.name.split(" ")
+                abi = ws_list[0]
+                num = int(ws_list[1])
+                if abi.lower()[:3] in ability:
+                    index = ability.index(abi.lower()[:3])
+                    num += number[index]
+                # See if the role exists, if not, create one
+                new_role = discord.utils.get(server.roles, name=f"{abi} {num}")
+                if new_role == None:
+                    new_role = await server.create_role(name=f"{abi} {num}", color=0x0000FF)
+                # Assign the role to the user
+                await interaction.user.add_roles(new_role)
+
+    async def race_role(self, interaction: discord.Interaction, option):
+        # Assign the server
+        server = interaction.guild
+        # See if the role exists, if not, create one
+        role = discord.utils.get(server.roles, name=f"{option}")
+        if role == None:
+            role = await server.create_role(name=f"{option}", color=0xFFFF00)
+        # Assign the role to the user
+        await interaction.user.add_roles(role)
 
     # Create a Select Menu class
     class SelectRace(discord.ui.Select):
@@ -79,6 +213,7 @@ class races(commands.Cog):
             self.interaction = interaction
             self.joint = joint_dict
             options = [discord.SelectOption(label="default")]
+            # Sets the page
             self.page = page
             super().__init__(placeholder="Races...", options=options, row=0)
             self.initiate_options()
@@ -105,7 +240,8 @@ class races(commands.Cog):
         async def callback(self, interaction: discord.Interaction):
             # Edit the original message
             await interaction.response.edit_message(content=f"Race selected...", view=None)
-            await interaction.channel.send(content=f"{interaction.user.mention} as chosen to be a **{self.values}**")
+            selection = self.values
+            await races.dict_access(races, interaction, selection)
     
     # Create a Select Menu View class to allow for discord to view it
     class SelectView(discord.ui.View):
