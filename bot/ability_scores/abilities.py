@@ -703,7 +703,7 @@ class abilities(commands.Cog):
         clrstr = "0x" + clrstr
         # Turn the string into a colour using from_str
         colour = discord.Color.from_str(clrstr)
-        # Assigns the user's roles to a variable
+        # Assigns the server's roles to a variable
         roles = server.roles
         # Loops through the server's roles, if no break is hit, go into the else
         for role in roles:

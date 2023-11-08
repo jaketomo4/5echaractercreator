@@ -145,66 +145,51 @@ class races(commands.Cog):
         skill_list = []
         score_list = []
         # Check if the entry has ability score increase
-        #try:
-        # Create a dictionary for the racial ASI
-        asi = entry.get('ability')[0]
-        # Loop through the dictionary keys
-        for i in asi.keys():
-            # Add the skill to the list
-            skill_list.append(i)
-            # Add the score increase to the list
-            score_list.append(asi[i])
-        await self.ability_increase(self, interaction, skill_list, score_list)
-        #except:
-            #print("no ability")
-        await self.race_role(self, interaction, option)
+        try:
+            # Create a dictionary for the racial ASI
+            asi = entry.get('ability')[0]
+            # Loop through the dictionary keys
+            for i in asi.keys():
+                # Add the skill to the list
+                skill_list.append(i)
+                # Add the score increase to the list
+                score_list.append(asi[i])
+        except:
+            print("no ability")
+        await self.race_role(self, interaction, option, skill_list, score_list)
 
-    # Create the function for adding to the user's abilities
-    async def ability_increase(self, interaction: discord.Interaction, skill, score):
-        # Assigns the user's roles to a variable
-        roles = interaction.user.roles
+    async def race_role(self, interaction: discord.Interaction, option, abilities, scores):
         # Assign the server
         server = interaction.guild
-        # Create lists for abilities and numbers
-        ability = []
-        number = []
-        # Creates a count
-        count = 0
-        # Loop through the skills
-        for i in skill:
-            # Add the skills and scores to the relevant lists
-            ability.append(i)
-            number.append(int(score[count])) 
-            count += 1
-        # Loops through the user's roles
+        # Create the colour string
+        clrstr = "0x"
+        # Creates a list of potential abilities
+        abi = ["str", "dex", "con", "int", "wis", "cha"]
+        
+        # Loop throuhg the potential abilities to check if the race has the specific ability increase
+        for i in abi:
+            if i in abilities:
+                index = abilities.index(i)
+                clrstr += str(scores[index])
+            else:
+                clrstr += "0"
+        # Turn the string into a colour using from_str
+        colour = discord.Color.from_str(clrstr)
+
+        # Assigns the server's roles to a variable
+        roles = server.roles
+        # Loops through the server's roles, if no break is hit, go into the else
         for role in roles:
-            # Checks if they are the "ability score" colour
-            if role.color == discord.colour.Colour(0x0000FF):
-                # Removes the role
-                await interaction.user.remove_roles(role, atomic=True)
-                # Create a list from the whitespace split
-                ws_list = role.name.split(" ")
-                abi = ws_list[0]
-                num = int(ws_list[1])
-                if abi.lower()[:3] in ability:
-                    index = ability.index(abi.lower()[:3])
-                    num += number[index]
-                # See if the role exists, if not, create one
-                new_role = discord.utils.get(server.roles, name=f"{abi} {num}")
-                if new_role == None:
-                    new_role = await server.create_role(name=f"{abi} {num}", color=0x0000FF)
+            # Checks if it is an "ability score" role
+            if role.name == f"{option}" and role.color == colour:
                 # Assign the role to the user
-                await interaction.user.add_roles(new_role)
-
-    async def race_role(self, interaction: discord.Interaction, option):
-        # Assign the server
-        server = interaction.guild
-        # See if the role exists, if not, create one
-        role = discord.utils.get(server.roles, name=f"{option}")
-        if role == None:
-            role = await server.create_role(name=f"{option}", color=0xFFFF00)
-        # Assign the role to the user
-        await interaction.user.add_roles(role)
+                await interaction.user.add_roles(role)
+                break
+        else:
+            # Role with matching colour hasn't been found, create role
+            role = await server.create_role(name=f"{option}", color=colour)
+            # Assign the role to the user
+            await interaction.user.add_roles(role)
 
     # Create a Select Menu class
     class SelectRace(discord.ui.Select):
