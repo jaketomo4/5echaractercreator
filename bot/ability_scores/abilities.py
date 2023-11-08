@@ -30,8 +30,8 @@ class abilities(commands.Cog):
         roles = interaction.user.roles
         # Loops through the user's roles
         for role in roles:
-            # Checks if they are the "ability score" colour
-            if role.color == discord.colour.Colour(0x0000FF):
+            # Checks if it is an "ability score" role
+            if role.name == "Ability Scores":
                 return True
         return False
     
@@ -41,9 +41,9 @@ class abilities(commands.Cog):
         roles = interaction.user.roles
         # Loops through the user's roles
         for role in roles:
-            # Checks if they are the "ability score" colour
-            if role.color == discord.colour.Colour(0x0000FF):
-                # Removes them
+            # Checks if it is an "ability score" role
+            if role.name == "Ability Scores":
+                # Removes it
                 await interaction.user.remove_roles(role, atomic=True)
 
     # Creates a class for the confirmation of resetting abilities
@@ -656,6 +656,69 @@ class abilities(commands.Cog):
         await self.assign_roles(self, interaction, abi_list, num_list)
     
     async def assign_roles(self, interaction: discord.Interaction, ability, number):
+        # Create a string value for the colour
+        clrstr = ""
+        # Assign the server
+        server = interaction.guild
+        # Loop through the ability names
+        for abi in ability:
+            # Find the correct number for the abilityand convert into an integer
+            num = int(number[ability.index(abi)])
+            # The lowest possible ability score a user can get is 3, the highest is 18 - due to this, hexadecimal can be used, which is also for the colour assignment
+            if (num >= 3) and (num <= 12):
+                # Minus 3 to get the numbers equal to the first 10 hexadecimal values
+                num -= 3
+                # Add the number to the colour string
+                clrstr += str(num)
+            else:
+                # Minus 12 to get the numbers to easily go from A -> F for the last 6 hexadecimal values
+                num -= 12
+                # Do a match-case statement to assign them to hexadecimal values
+                match(num):
+                    # Assign 13 to A
+                    case 1:
+                        # Add the hex value to the colour string
+                        clrstr += "A"
+                    # Assign 14 to B
+                    case 2:
+                        # Add the hex value to the colour string
+                        clrstr += "B"
+                    # Assign 15 to C
+                    case 3:
+                        # Add the hex value to the colour string
+                        clrstr += "C"
+                    # Assign 16 to D
+                    case 4:
+                        # Add the hex value to the colour string
+                        clrstr += "D"
+                    # Assign 17 to E
+                    case 5:
+                        # Add the hex value to the colour string
+                        clrstr += "E"
+                    # Assign 18 to F
+                    case 6:
+                        # Add the hex value to the colour string
+                        clrstr += "F"
+        # Add 0x to the start of the colour string
+        clrstr = "0x" + clrstr
+        # Turn the string into a colour using from_str
+        colour = discord.Color.from_str(clrstr)
+        # Assigns the user's roles to a variable
+        roles = server.roles
+        # Loops through the server's roles, if no break is hit, go into the else
+        for role in roles:
+            # Checks if it is an "ability score" role
+            if role.name == "Ability Scores" and role.color == colour:
+                # Assign the role to the user
+                await interaction.user.add_roles(role)
+                break
+        else:
+            # Role with matching colour hasn't been found, create role
+            role = await server.create_role(name=f"Ability Scores", color=colour)
+            # Assign the role to the user
+            await interaction.user.add_roles(role)
+
+    async def old_assign_roles(self, interaction: discord.Interaction, ability, number):
         # A counter for the role assignment
         count = 0
         # Assign the server
@@ -670,6 +733,7 @@ class abilities(commands.Cog):
             # Assign the role to the user
             await interaction.user.add_roles(role)
             count += 1
+            
 
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(abilities(client))
