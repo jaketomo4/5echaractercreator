@@ -15,16 +15,15 @@ class races(commands.Cog):
         # Creates dictionaries for the races and subraces
         self.races = {}
         self.subraces = {}
-        # Creates a joint dictionary
         self.joint = {}
 
     # Establishes the command related to the cog
     @app_commands.command(name="race", description="Select which race you want to play!")
     async def race(self, interaction: discord.Interaction):
         # Assign an ability role checker
-        check = await self.check_abilities(interaction)
-        if not check:
-            await interaction.response.send_message(content=f"You need to assign your abilities. Please use **/abilities** to do so.", view=self.AbilityMessage(interaction), ephemeral=True)
+        check = await self.check_roles(interaction)
+        if check:
+            await interaction.response.send_message(content=f"You already have your class selected, would you like to reset it?", view=self.ResetRace(interaction, self), ephemeral=True)
         else:
             # Calls the function to get all the races and subraces
             json_dict = await self.json_get()
@@ -32,26 +31,78 @@ class races(commands.Cog):
             await self.tidy_dict(json_dict)
             await interaction.response.send_message(content=f"What race would you like to play as?", view=self.SelectView(interaction, self.joint), ephemeral=True)
 
+
     # Creates a function for checking the roles
-    async def check_abilities(self, interaction: discord.Interaction):
+    async def check_roles(self, interaction: discord.Interaction):
         # Assigns the user's roles to a variable
         roles = interaction.user.roles
         # Loops through the user's roles
         for role in roles:
-            # Checks if they are the "ability score" colour
-            if role.color == discord.colour.Colour(0x0000FF):
-                return True
+            # Gets the colour
+            clr = role.colour
+            # Removes hashtag
+            clr = str(clr).replace("#","")
+            # Loops through the string and adds the total
+            total = 0
+            # The likelihood is the total should be formed from either an "ability score" role or a "race" role, and a "race" role with have a total of 6 or less (Human will give the max)
+            for i in clr:
+                # Try to see if the digit is an int
+                try:
+                    total += int(i)
+                except:
+                    total = 0
+                    break
+            # If the break isn't hit, go forth
+            else:
+                if total <= 6 and total != 0:
+                    return True
         return False
     
-    # Creates a class for the confirmation of needing to sort abilities
-    class AbilityMessage(discord.ui.View):
-        def __init__(self, interaction: discord.Interaction):
+    # Creats a function for removing race roles
+    async def remove_roles(self, interaction: discord.Interaction):
+        # Assigns the user's roles to a variable
+        roles = interaction.user.roles
+        # Loops through the user's roles
+        for role in roles:
+            # Gets the colour
+            clr = role.colour
+            # Removes hashtag
+            clr = str(clr).replace("#","")
+            # Loops through the string and adds the total
+            total = 0
+            # The likelihood is the total should be formed from either an "ability score" role or a "race" role, and a "race" role with have a total of 6 or less (Human will give the max)
+            for i in clr:
+                # Try to see if the digit is an int
+                try:
+                    total += int(i)
+                except:
+                    total = 0
+                    break
+            # If the break isn't hit, go forth
+            else:
+                if total <= 6 and total != 0:
+                    # Removes the roles
+                    await interaction.user.remove_roles(role, atomic=True)
+    
+    # Creates a class for the confirmation of resetting abilities
+    class ResetRace(discord.ui.View):
+        def __init__(self, interaction: discord.Interaction, outer_class):
             super().__init__(timeout=None)
+            self.outer_class = outer_class
 
-        @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+        @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
         async def accept(self, interaction: discord.Interaction, Button: discord.ui.Button):
-            # If the user accepts, continue through the abilities as intended
-            await interaction.response.edit_message(content="Roll **/abilities**", view=None)
+            # Calls the function to get all the races and subraces
+            json_dict = await self.outer_class.json_get()
+            # Tidy the dictionary up
+            await self.outer_class.tidy_dict(json_dict)
+            dict = self.outer_class.joint
+            await interaction.response.edit_message(content=f"What race would you like to play as?", view=races.SelectView(interaction, dict))
+            await races.remove_roles(races, interaction)
+
+        @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
+        async def decline(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            await interaction.response.edit_message(content=f"Your race has been unchanged.", view=None)
 
     # A function for getting the json from the 5etools github
     async def json_get(self):
