@@ -158,7 +158,7 @@ class races(commands.Cog):
         # Assign the name from splitting on the -
         split_list = option.split(" - ")
         # Check if the option is a subrace
-        if "-" in option:
+        if " - " in option:
             name = split_list[0]
             # Assign the raceName from split list and then splitting on the ( and removing the whitespace at the end
             raceName = (split_list[1].split("(")[0])[:-1]
@@ -190,8 +190,9 @@ class races(commands.Cog):
     # Create the function for establishing the race features
     async def race_features(self, interaction: discord.Interaction, option, entry):
         print(entry)
-        # Confirm what the user selected
-        await interaction.channel.send(content=f"{interaction.user.mention} has chosen to be a **{option}**")
+
+        # TODO - Make this section a different function to allow for the "choose" option to occur before it and not have multiple parameters flittering about
+
         # Assign lists for ability increase
         skill_list = []
         score_list = []
@@ -201,13 +202,50 @@ class races(commands.Cog):
             asi = entry.get('ability')[0]
             # Loop through the dictionary keys
             for i in asi.keys():
-                # Add the skill to the list
-                skill_list.append(i)
-                # Add the score increase to the list
-                score_list.append(asi[i])
+                # Ensure the user doesn't have to choose any abilities
+                if i != 'choose':
+                    # Add the skill to the list
+                    skill_list.append(i)
+                    # Add the score increase to the list
+                    score_list.append(asi[i])
         except:
             print("no ability")
-        await self.race_role(self, interaction, option, skill_list, score_list)
+
+        # Do a try except to make sure abilities are there still
+        try:
+            # Create a dictionary for the racial ASI again
+            asi = entry.get('ability')[0]
+            # Check if the user can choose
+            if "choose" in asi:
+                # Set the dictionary for the choose options
+                abi_dict = asi.get('choose')
+                # Set a list for the options that can be increase
+                abi_options = abi_dict['from']
+                # Set a value for the amount of +1s the user can do
+                abi_count = abi_dict['count']
+                await interaction.response.edit_message(content=f"You have {abi_count} +1s to choose...", view=self.ChooseAbilities(interaction, abi_options, abi_count), ephemeral=True)
+            else:
+                # Confirm what the user selected
+                await interaction.channel.send(content=f"{interaction.user.mention} has chosen to be a **{option}**")
+                await self.race_role(self, interaction, option, skill_list, score_list)
+        except:
+            print("no ability")
+
+    # Creates a class for the user to choose their abilities if they're able to
+    class ChooseAbilities(discord.ui.View):
+        def __init__(self, interaction: discord.Interaction, options, count):
+            super().__init__(timeout=None)
+            self.options = options
+            self.count = count
+
+        @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
+        async def accept(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            await interaction.response.edit_message(content=f"What race would you like to play as?", view=races.SelectView(interaction, dict))
+            await races.remove_roles(races, interaction)
+
+        @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
+        async def decline(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            await interaction.response.edit_message(content=f"Your race has been unchanged.", view=None)
 
     async def race_role(self, interaction: discord.Interaction, option, abilities, scores):
         # Assign the server
