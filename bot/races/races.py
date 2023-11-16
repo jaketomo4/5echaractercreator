@@ -185,14 +185,33 @@ class races(commands.Cog):
                     entry = i
                     break
         # Throw the entry into the function for establishing important race features
-        await self.race_features(self, interaction, option, entry)
+        await self.choose_check(self, interaction, option, entry)
 
     # Create the function for establishing the race features
-    async def race_features(self, interaction: discord.Interaction, option, entry):
+    async def choose_check(self, interaction: discord.Interaction, option, entry):
+        # Do a try except to make sure abilities are there
+        try:
+            # Create a dictionary for the racial ASI again
+            asi = entry.get('ability')[0]
+            # Check if the user can choose
+            if "choose" in asi:
+                # Set the dictionary for the choose options
+                abi_dict = asi.get('choose')
+                # Set a list for the options that can be increase
+                abi_options = abi_dict['from']
+                # Set a value for the amount of +1s the user can do
+                abi_count = abi_dict['count']
+                await interaction.response.edit_message(content=f"You have {abi_count} +1s to choose...", view=self.ChooseAbilities(interaction, abi_options, abi_count, option, entry), ephemeral=True)
+            else:
+                await self.ability_assignment(interaction, option, entry)
+        except:
+            print("no ability")
+
+    # Create a function for assigning the ability scores correctly
+    async def ability_assignment(self, interaction: discord.Interaction, option, entry, chosen = None, score = None):
         print(entry)
-
-        # TODO - Make this section a different function to allow for the "choose" option to occur before it and not have multiple parameters flittering about
-
+        # Confirm what the user selected
+        await interaction.channel.send(content=f"{interaction.user.mention} has chosen to be a **{option}**")
         # Assign lists for ability increase
         skill_list = []
         score_list = []
@@ -208,45 +227,15 @@ class races(commands.Cog):
                     skill_list.append(i)
                     # Add the score increase to the list
                     score_list.append(asi[i])
+                else:
+                    if chosen != None and score != None:
+                        print("TODO") # TODO
+            await self.race_role(interaction, option, skill_list, score_list)
         except:
             print("no ability")
 
-        # Do a try except to make sure abilities are there still
-        try:
-            # Create a dictionary for the racial ASI again
-            asi = entry.get('ability')[0]
-            # Check if the user can choose
-            if "choose" in asi:
-                # Set the dictionary for the choose options
-                abi_dict = asi.get('choose')
-                # Set a list for the options that can be increase
-                abi_options = abi_dict['from']
-                # Set a value for the amount of +1s the user can do
-                abi_count = abi_dict['count']
-                await interaction.response.edit_message(content=f"You have {abi_count} +1s to choose...", view=self.ChooseAbilities(interaction, abi_options, abi_count), ephemeral=True)
-            else:
-                # Confirm what the user selected
-                await interaction.channel.send(content=f"{interaction.user.mention} has chosen to be a **{option}**")
-                await self.race_role(self, interaction, option, skill_list, score_list)
-        except:
-            print("no ability")
 
-    # Creates a class for the user to choose their abilities if they're able to
-    class ChooseAbilities(discord.ui.View):
-        def __init__(self, interaction: discord.Interaction, options, count):
-            super().__init__(timeout=None)
-            self.options = options
-            self.count = count
-
-        @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
-        async def accept(self, interaction: discord.Interaction, Button: discord.ui.Button):
-            await interaction.response.edit_message(content=f"What race would you like to play as?", view=races.SelectView(interaction, dict))
-            await races.remove_roles(races, interaction)
-
-        @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
-        async def decline(self, interaction: discord.Interaction, Button: discord.ui.Button):
-            await interaction.response.edit_message(content=f"Your race has been unchanged.", view=None)
-
+    # Create a function for creating the race role
     async def race_role(self, interaction: discord.Interaction, option, abilities, scores):
         # Assign the server
         server = interaction.guild
@@ -340,7 +329,7 @@ class races(commands.Cog):
             await self.update_view(interaction)
                 
         # Creates a function for updating the view
-        async def update_view(self, interaction):
+        async def update_view(self, interaction: discord.Interaction):
             # Checks the children
             for i in self.children:
                 # Checks to see if the child is buttons (try) or SelectView (except)
@@ -366,6 +355,169 @@ class races(commands.Cog):
                 except:
                     self.select.page = self.page
                     self.select.initiate_options()
+            await interaction.response.edit_message(view=self)
+
+    # Creates a class for the user to choose their abilities if they're able to
+    class ChooseAbilities(discord.ui.View):
+        def __init__(self, interaction: discord.Interaction, options, count, option, entry):
+            super().__init__(timeout=None)
+            self.options = options
+            self.count = count
+            self.base = count
+            self.option = option
+            self.entry = entry
+            # Create a list for the ability names
+            self.abilities = ["Str", "Dex", "Con", "Int", "Wis", "Cha"]
+            # Create the variables for storing the selected abilities
+            self.chosen = []
+            self.score = []
+
+        # Essentially copy the Point Buy class over and change some things around
+        # Creates buttons for the various stats
+        @discord.ui.button(label="Str", style=discord.ButtonStyle.blurple, disabled=False, row=1)
+        async def str(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Dex", style=discord.ButtonStyle.blurple, disabled=False, row=2)
+        async def dex(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Con", style=discord.ButtonStyle.blurple, disabled=False, row=3)
+        async def con(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Int", style=discord.ButtonStyle.blurple, disabled=False, row=1)
+        async def int(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Wis", style=discord.ButtonStyle.blurple, disabled=False, row=2)
+        async def wis(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label
+            await self.update_button(interaction, Button)
+        @discord.ui.button(label="Cha", style=discord.ButtonStyle.blurple, disabled=False, row=3)
+        async def cha(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Checks the button style, if it's one colour, change it to the other
+            if Button.style == discord.ButtonStyle.blurple:
+                Button.style = discord.ButtonStyle.green
+            else:
+                Button.style = discord.ButtonStyle.blurple
+            # Sets the stat to the clicked button
+            self.stat = Button.label
+            await self.update_button(interaction, Button)
+
+        # Creates button for the total number of +1s
+        @discord.ui.button(label="27", style=discord.ButtonStyle.grey, disabled=True, row=1) # TODO change the label to self.count
+        async def total(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            print("total")
+
+        # Creates buttons for incrementing or decrementing
+        @discord.ui.button(label="+", style=discord.ButtonStyle.green, disabled=True, row=2)
+        async def plus(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Loop through the children to see which ability is selected
+            for i in self.children:
+                # Check it's green (selected)
+                if i.style == discord.ButtonStyle.green and i.label != "+":
+                    self.count -= 1
+                    i.style = discord.ButtonStyle.blurple
+                    i.disabled = True
+                    # Update the button
+                    await self.update_view(interaction, Button)
+                    return
+        
+        # Creates button for reseting
+        @discord.ui.button(label="Reset", style=discord.ButtonStyle.red, disabled=False, row=4)
+        async def reset(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Loops through the buttons
+            for i in self.children:
+                # Check if the button is an ability or a score
+                if i.label in self.abilities:
+                    i.style = discord.ButtonStyle.blurple
+                    i.disabled = False
+                if i.label == str(self.count):
+                    i.label = str(self.base)
+                # Set the + and - buttons to their original state
+                if i.label == "+":
+                    i.disabled = True
+            # Reset points
+            self.count = self.base
+            await interaction.response.edit_message(view=self)
+        
+        # Creates button for reseting
+        @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, disabled=True, row=4)
+        async def confirm(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Loops through the buttons
+            for i in self.children:
+                if i.label in self.abilities:
+                    # Checks what ability is which and assigns accordingly
+                    if i.disabled == True:
+                        self.chosen.append(i.label)
+                        self.score.append(1)
+            await interaction.response.edit_message(content=f"Your chosen race abilities have been established...", view=None)
+            await races.ability_assignment(interaction, self.option, self.entry, self.chosen, self.score)
+
+        # A function for updating the buttons
+        async def update_button(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            # Check if the button is an ability or a score
+            if Button.label in self.abilities:
+                # Loop through the children of the view
+                for i in self.children:
+                    # Check if it's an ability
+                    if i.label in self.abilities:
+                        # If it's not the clicked button, turn it blurple
+                        if i != Button:
+                            i.style = discord.ButtonStyle.blurple
+            await self.update_view(interaction, Button)
+
+        # A function for updating the view
+        async def update_view(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            for i in self.children:
+                # Checks the selected ability
+                if i.label.startswith(self.stat):
+                    # Is the label selected?
+                    if i.style == discord.ButtonStyle.green:
+                        # Updates the + button accordingly
+                        self.children[7].disabled = True
+                    else:
+                        # Since the label has been deselected, set + and - to original
+                        self.children[7].disabled = True
+            # Updates the total
+            self.children[6].label = f"{self.count}"
+            # Updates the confirm button
+            if self.count == 0:
+                self.children[9].disabled = False
+            else:
+                self.children[9].disabled = True
+            # Edit the message with the updated view
             await interaction.response.edit_message(view=self)
 
 # Sets up the cog for the bot to register it
