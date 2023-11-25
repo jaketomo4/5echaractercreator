@@ -201,7 +201,9 @@ class races(commands.Cog):
                 abi_options = abi_dict['from']
                 # Set a value for the amount of +1s the user can do
                 abi_count = abi_dict['count']
-                await interaction.response.edit_message(content=f"You have {abi_count} +1s to choose...", view=self.ChooseAbilities(interaction, abi_options, abi_count, option, entry), ephemeral=True)
+                # Fetch the message for editing
+                msg = await interaction.followup.fetch_message(interaction.message.id)
+                await msg.edit(content=f"You have **{abi_count}** +1s to choose...", view=self.ChooseAbilities(interaction, abi_options, abi_count, option, entry, self))
             else:
                 await self.ability_assignment(interaction, option, entry)
         except:
@@ -216,24 +218,28 @@ class races(commands.Cog):
         skill_list = []
         score_list = []
         # Check if the entry has ability score increase
-        try:
-            # Create a dictionary for the racial ASI
-            asi = entry.get('ability')[0]
-            # Loop through the dictionary keys
-            for i in asi.keys():
-                # Ensure the user doesn't have to choose any abilities
-                if i != 'choose':
-                    # Add the skill to the list
-                    skill_list.append(i)
-                    # Add the score increase to the list
-                    score_list.append(asi[i])
-                else:
-                    if chosen != None and score != None:
-                        print("TODO") # TODO
-            await self.race_role(interaction, option, skill_list, score_list)
-        except:
-            print("no ability")
-
+        #try:
+        # Create a dictionary for the racial ASI
+        asi = entry.get('ability')[0]
+        # Loop through the dictionary keys
+        for i in asi.keys():
+            # Ensure the user doesn't have to choose any abilities
+            if i != 'choose':
+                # Add the skill to the list
+                skill_list.append(i)
+                # Add the score increase to the list
+                score_list.append(asi[i])
+            else:
+                if chosen != None and score != None:
+                    for i in chosen:
+                        if i in skill_list:
+                            continue
+                        index = chosen.index(i)
+                        skill_list.append(i)
+                        score_list.append(score[index])
+        await self.race_role(self, interaction, option, skill_list, score_list)
+        #except:
+            #print("no ability")
 
     # Create a function for creating the race role
     async def race_role(self, interaction: discord.Interaction, option, abilities, scores):
@@ -359,7 +365,7 @@ class races(commands.Cog):
 
     # Creates a class for the user to choose their abilities if they're able to
     class ChooseAbilities(discord.ui.View):
-        def __init__(self, interaction: discord.Interaction, options, count, option, entry):
+        def __init__(self, interaction: discord.Interaction, options, count, option, entry, outer_class):
             super().__init__(timeout=None)
             self.options = options
             self.count = count
@@ -371,6 +377,25 @@ class races(commands.Cog):
             # Create the variables for storing the selected abilities
             self.chosen = []
             self.score = []
+            # Assign the total button to equal the count amount
+            self.children[6].label=f"{self.count}"
+            # Set the outer class variable
+            self.outer_class = outer_class
+            # Create a dictionary for the racial ASI
+            asi = entry.get('ability')[0]
+            # Loop through the dictionary keys
+            for i in asi.keys():
+                # See what the non-choose ability is
+                if i != 'choose':
+                    # Assign a variable
+                    self.ability = i
+                    break
+            # Loop through the children
+            for i in self.children:
+                # See if the ability is equal to one of the labelled buttons
+                if i.label.lower() == self.ability:
+                    # Disable it
+                    i.disabled = True
 
         # Essentially copy the Point Buy class over and change some things around
         # Creates buttons for the various stats
@@ -436,7 +461,7 @@ class races(commands.Cog):
             await self.update_button(interaction, Button)
 
         # Creates button for the total number of +1s
-        @discord.ui.button(label="27", style=discord.ButtonStyle.grey, disabled=True, row=1) # TODO change the label to self.count
+        @discord.ui.button(label="0", style=discord.ButtonStyle.grey, disabled=True, row=1)
         async def total(self, interaction: discord.Interaction, Button: discord.ui.Button):
             print("total")
 
@@ -468,8 +493,13 @@ class races(commands.Cog):
                 # Set the + and - buttons to their original state
                 if i.label == "+":
                     i.disabled = True
+                # See if the ability is equal to one of the labelled buttons
+                if i.label.lower() == self.ability:
+                    # Disable it
+                    i.disabled = True
             # Reset points
             self.count = self.base
+            # Edit the message with the updated view
             await interaction.response.edit_message(view=self)
         
         # Creates button for reseting
@@ -480,10 +510,10 @@ class races(commands.Cog):
                 if i.label in self.abilities:
                     # Checks what ability is which and assigns accordingly
                     if i.disabled == True:
-                        self.chosen.append(i.label)
+                        self.chosen.append(i.label.lower())
                         self.score.append(1)
             await interaction.response.edit_message(content=f"Your chosen race abilities have been established...", view=None)
-            await races.ability_assignment(interaction, self.option, self.entry, self.chosen, self.score)
+            await races.ability_assignment(self.outer_class, interaction, self.option, self.entry, self.chosen, self.score)
 
         # A function for updating the buttons
         async def update_button(self, interaction: discord.Interaction, Button: discord.ui.Button):
@@ -506,10 +536,14 @@ class races(commands.Cog):
                     # Is the label selected?
                     if i.style == discord.ButtonStyle.green:
                         # Updates the + button accordingly
-                        self.children[7].disabled = True
+                        self.children[7].disabled = False
                     else:
                         # Since the label has been deselected, set + and - to original
                         self.children[7].disabled = True
+                # See if the ability is equal to one of the labelled buttons
+                if i.label.lower() == self.ability:
+                    # Disable it
+                    i.disabled = True
             # Updates the total
             self.children[6].label = f"{self.count}"
             # Updates the confirm button
