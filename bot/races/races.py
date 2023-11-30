@@ -17,6 +17,11 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+# Create the URL variable for the github link to 5etools
+URL = "https://raw.githubusercontent.com/5etools-mirror-1/5etools-mirror-1.github.io/master/data/races.json"
+
+# TODO: Skill Proficiencies, Language Proficiencies, 
+
 # Creates a class for the d20 cog
 class races(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -33,7 +38,7 @@ class races(commands.Cog):
         # Assign an ability role checker
         check = await self.check_roles(interaction)
         if check:
-            await interaction.response.send_message(content=f"You already have your class selected, would you like to reset it?", view=self.ResetRace(interaction, self), ephemeral=True)
+            await interaction.response.send_message(content=f"You already have your race selected, would you like to reset it?", view=self.ResetRace(interaction, self), ephemeral=True)
         else:
             # Calls the function to get all the races and subraces
             json_dict = await self.json_get()
@@ -122,7 +127,7 @@ class races(commands.Cog):
     async def json_get(self):
         """Get the json for races"""
         # Request from the 5etools github
-        f = requests.get("https://raw.githubusercontent.com/5etools-mirror-1/5etools-mirror-1.github.io/master/data/races.json")
+        f = requests.get(URL)
         # Uses loads for the data, not load for the file path - uses .text for the input
         json_dict = json.loads(f.text)
         # Call the tidy dictionary function
@@ -342,7 +347,7 @@ class races(commands.Cog):
             self.select = races.SelectRace(interaction, joint_dict, page)
             self.add_item(self.select)
             self.dict_len = len(joint_dict)
-            # Creates a variables for the select menu class to assign the values of the dictionaries accordingly
+            # Creates a variables for the select menu class to assign the page
             self.page = page
             # Creates a variable for the joint dictionary
             self.joint_dict = joint_dict

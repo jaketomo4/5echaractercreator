@@ -18,7 +18,6 @@ import discord
 from discord.ext import commands
 
 TIME = time.time()
-print(Fore.GREEN + TIME + Fore.RESET)
 
 # Creates a class for the client (bot) to run from
 class Client(commands.Bot):
@@ -28,7 +27,9 @@ class Client(commands.Bot):
         self.cog_list = [
             "dice.d20",
             "ability_scores.abilities",
-            "races.races"
+            "races.races",
+            "backgrounds.backgrounds",
+            "skills.skills"
             ]
 
     async def setup_hook(self):
@@ -41,7 +42,7 @@ class Client(commands.Bot):
         print(Fore.GREEN + self.user.name + Fore.RESET + " - " + Fore.YELLOW + str(self.user.id) + Fore.RESET)
         synced = await self.tree.sync()
         print(Fore.RED + "Synced " + Fore.MAGENTA + str(len(synced)) + " commands" + Fore.RESET)
-        print(Fore.RED + "Time taken: " + Fore.GREEN + (time.time() - TIME) + Fore.RED + " seconds" + Fore.RESET)
+        print(Fore.RED + "Time taken: " + Fore.GREEN + str(time.time() - TIME) + Fore.RED + " seconds" + Fore.RESET)
 
 # Assigns the class
 client = Client()
