@@ -1,3 +1,12 @@
+"""
+5e Character Creator
+Discord Bot
+
+Created by Jake Thompson @jaketomo4
+
+races.py
+"""
+
 # Standard Imports
 import requests
 import json
@@ -20,6 +29,7 @@ class races(commands.Cog):
     # Establishes the command related to the cog
     @app_commands.command(name="race", description="Select which race you want to play!")
     async def race(self, interaction: discord.Interaction):
+        """Slash command for race"""
         # Assign an ability role checker
         check = await self.check_roles(interaction)
         if check:
@@ -34,6 +44,7 @@ class races(commands.Cog):
 
     # Creates a function for checking the roles
     async def check_roles(self, interaction: discord.Interaction):
+        """Check the user's roles"""
         # Assigns the user's roles to a variable
         roles = interaction.user.roles
         # Loops through the user's roles
@@ -60,6 +71,7 @@ class races(commands.Cog):
     
     # Creats a function for removing race roles
     async def remove_roles(self, interaction: discord.Interaction):
+        """Remove the user's roles"""
         # Assigns the user's roles to a variable
         roles = interaction.user.roles
         # Loops through the user's roles
@@ -92,6 +104,7 @@ class races(commands.Cog):
 
         @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
         async def accept(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Accept a race change"""
             # Calls the function to get all the races and subraces
             json_dict = await self.outer_class.json_get()
             # Tidy the dictionary up
@@ -102,10 +115,12 @@ class races(commands.Cog):
 
         @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
         async def decline(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Decline a race change"""
             await interaction.response.edit_message(content=f"Your race has been unchanged.", view=None)
 
     # A function for getting the json from the 5etools github
     async def json_get(self):
+        """Get the json for races"""
         # Request from the 5etools github
         f = requests.get("https://raw.githubusercontent.com/5etools-mirror-1/5etools-mirror-1.github.io/master/data/races.json")
         # Uses loads for the data, not load for the file path - uses .text for the input
@@ -115,6 +130,7 @@ class races(commands.Cog):
 
     # A function for making nicer dictionaries
     async def tidy_dict(self, json_dict):
+        """Tidy the json"""
         # Grab the races and subraces, turning them into lists
         races = json_dict["race"]
         subraces = json_dict["subrace"]
@@ -143,12 +159,14 @@ class races(commands.Cog):
     
     # A function for joining the dictionaries
     async def join_dict(self):
+        """Join the dictionaries"""
         # Join the dictionaries
         joint = self.races | self.subraces
         self.joint = sorted(joint.keys())
 
-    # A function for taking the selected class and accessing the dictionary
+    # A function for taking the selected race and accessing the dictionary
     async def dict_access(self, interaction, option):
+        """Access the dictionaries"""
         # Obtain the dictionary
         json_dict = await self.json_get(self)
         # Create a variable for the entry
@@ -189,6 +207,7 @@ class races(commands.Cog):
 
     # Create the function for establishing the race features
     async def choose_check(self, interaction: discord.Interaction, option, entry):
+        """Check if the race has choices for ability scores"""
         # Do a try except to make sure abilities are there
         try:
             # Create a dictionary for the racial ASI again
@@ -211,6 +230,7 @@ class races(commands.Cog):
 
     # Create a function for assigning the ability scores correctly
     async def ability_assignment(self, interaction: discord.Interaction, option, entry, chosen = None, score = None):
+        """Assign the abilities accordingly"""
         print(entry)
         # Confirm what the user selected
         await interaction.channel.send(content=f"{interaction.user.mention} has chosen to be a **{option}**")
@@ -243,6 +263,7 @@ class races(commands.Cog):
 
     # Create a function for creating the race role
     async def race_role(self, interaction: discord.Interaction, option, abilities, scores):
+        """Create the role for the race"""
         # Assign the server
         server = interaction.guild
         # Create the colour string
@@ -288,6 +309,7 @@ class races(commands.Cog):
             self.initiate_options()
         
         def initiate_options(self):
+            """Fill the Select Menu"""
             # Clear the default options
             self.options.clear()
             # Make a count for the options
@@ -307,6 +329,7 @@ class races(commands.Cog):
 
         # Called when a value is selected
         async def callback(self, interaction: discord.Interaction):
+            """Assess the selected choice"""
             # Edit the original message
             await interaction.response.edit_message(content=f"Race selected...", view=None)
             selection = self.values
@@ -326,16 +349,19 @@ class races(commands.Cog):
         
         @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.red, disabled=True, row=1)
         async def previous(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Go to the previous page on the select menu"""
             self.page -= 1
             await self.update_view(interaction)
 
         @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.green, disabled=False, row=1)
         async def next(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Go to the next page on the select menu"""
             self.page += 1
             await self.update_view(interaction)
                 
         # Creates a function for updating the view
         async def update_view(self, interaction: discord.Interaction):
+            """Update the view of the select menu"""
             # Checks the children
             for i in self.children:
                 # Checks to see if the child is buttons (try) or SelectView (except)
@@ -401,6 +427,7 @@ class races(commands.Cog):
         # Creates buttons for the various stats
         @discord.ui.button(label="Str", style=discord.ButtonStyle.blurple, disabled=False, row=1)
         async def str(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Str' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -411,6 +438,7 @@ class races(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Dex", style=discord.ButtonStyle.blurple, disabled=False, row=2)
         async def dex(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Dex' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -421,6 +449,7 @@ class races(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Con", style=discord.ButtonStyle.blurple, disabled=False, row=3)
         async def con(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Con' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -431,6 +460,7 @@ class races(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Int", style=discord.ButtonStyle.blurple, disabled=False, row=1)
         async def int(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Int' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -441,6 +471,7 @@ class races(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Wis", style=discord.ButtonStyle.blurple, disabled=False, row=2)
         async def wis(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Wis' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -451,6 +482,7 @@ class races(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Cha", style=discord.ButtonStyle.blurple, disabled=False, row=3)
         async def cha(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Cha' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -463,6 +495,7 @@ class races(commands.Cog):
         # Creates button for the total number of +1s
         @discord.ui.button(label="0", style=discord.ButtonStyle.grey, disabled=True, row=1)
         async def total(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Total' button"""
             print("total")
 
         # Creates buttons for incrementing or decrementing
@@ -482,6 +515,7 @@ class races(commands.Cog):
         # Creates button for reseting
         @discord.ui.button(label="Reset", style=discord.ButtonStyle.red, disabled=False, row=4)
         async def reset(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Reset' button"""
             # Loops through the buttons
             for i in self.children:
                 # Check if the button is an ability or a score
@@ -505,6 +539,7 @@ class races(commands.Cog):
         # Creates button for reseting
         @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, disabled=True, row=4)
         async def confirm(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Confirm' button"""
             # Loops through the buttons
             for i in self.children:
                 if i.label in self.abilities:
@@ -517,6 +552,7 @@ class races(commands.Cog):
 
         # A function for updating the buttons
         async def update_button(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Update the buttons"""
             # Check if the button is an ability or a score
             if Button.label in self.abilities:
                 # Loop through the children of the view
@@ -530,6 +566,7 @@ class races(commands.Cog):
 
         # A function for updating the view
         async def update_view(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Update the view"""
             for i in self.children:
                 # Checks the selected ability
                 if i.label.startswith(self.stat):
@@ -556,4 +593,5 @@ class races(commands.Cog):
 
 # Sets up the cog for the bot to register it
 async def setup(client: commands.Bot) -> None:
+    """Setup the cog"""
     await client.add_cog(races(client))

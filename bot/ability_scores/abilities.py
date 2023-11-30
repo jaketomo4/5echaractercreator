@@ -1,3 +1,12 @@
+"""
+5e Character Creator
+Discord Bot
+
+Created by Jake Thompson @jaketomo4
+
+abilities.py
+"""
+
 # Standard Imports
 import random
 
@@ -16,6 +25,7 @@ class abilities(commands.Cog):
     # Creates the commands for establishing ability scores
     @app_commands.command(name="abilities", description="Establish your ability scores!")
     async def abilities(self, interaction: discord.Interaction):
+        """Slash command for abilities"""
         # Checks if the user has ability scores already
         check = await self.check_roles(interaction)
         if check:
@@ -26,6 +36,7 @@ class abilities(commands.Cog):
 
     # Creates a function for checking the roles
     async def check_roles(self, interaction: discord.Interaction):
+        """Check the user's roles"""
         # Assigns the user's roles to a variable
         roles = interaction.user.roles
         # Loops through the user's roles
@@ -37,6 +48,7 @@ class abilities(commands.Cog):
     
     # Creats a function for removing ability roles
     async def remove_roles(self, interaction: discord.Interaction):
+        """Remove the user's roles"""
         # Assigns the user's roles to a variable
         roles = interaction.user.roles
         # Loops through the user's roles
@@ -53,12 +65,14 @@ class abilities(commands.Cog):
 
         @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
         async def accept(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Accept an ability score change"""
             # If the user accepts, continue through the abilities as intended
             await interaction.response.edit_message(content=f"Select what you'd like to do:", view=abilities.AbilityScores(interaction))
             await abilities.remove_roles(abilities, interaction)
 
         @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
         async def decline(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Decline an ability score change"""
             await interaction.response.edit_message(content=f"Your ability scores have been unchanged.", view=None)
 
     # Creates a class for the various ability buttons
@@ -69,12 +83,14 @@ class abilities(commands.Cog):
         # Creates a "Standard Array" button which is green and enabled
         @discord.ui.button(label="Standard Array", style=discord.ButtonStyle.green, disabled = False)
         async def standard_array(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Standard Array' button"""
             # Edits the original message accordingly
             await interaction.response.edit_message(content="Please select which ability you want to assign and the number you want to assign it to.", view=abilities.AbilityButtons(interaction, Button.label))
 
         # Creates a "Rolling Stats" button which is green and enabled
         @discord.ui.button(label="Rolling Stats", style=discord.ButtonStyle.green, disabled = False)
         async def rolling_stats(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Rolling Stats' button"""
             # Defines the class to bypass async being used in __init__
             roll_stats = abilities.RollingStats(interaction, Button, Button.label)
             # Calls roll stats
@@ -83,6 +99,7 @@ class abilities(commands.Cog):
         # Creates a "Point Buy" button which is green and enabled
         @discord.ui.button(label="Point Buy", style=discord.ButtonStyle.green, disabled = False)
         async def point_buy(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Point Buy' button"""
             # Edits the original message accordingly
             await interaction.response.edit_message(content="Please select which ability you want to increment/ decrement", view=abilities.PointBuy(interaction, Button.label))
     
@@ -97,16 +114,19 @@ class abilities(commands.Cog):
         # Creates a button for the stats to be rerolled
         @discord.ui.button(label="Re-roll?", style=discord.ButtonStyle.red, disabled=False)
         async def reroll(self, interaction: discord.Interaction, Button:discord.ui.Button):
+            """Create the 'Re-roll' button"""
             # Rerolls the stats
             await self.roll_stats(interaction)
 
         # Creates a button for the stats to be rerolled
         @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, disabled=False)
         async def confirm(self, interaction: discord.Interaction, Button:discord.ui.Button):
+            """Create the 'confirm' button"""
             # Confirms the rolled stats
             await interaction.response.edit_message(content="Please select which ability you want to assign and the number you want to assign it to.", view=abilities.AbilityButtons(interaction, Button.label, self.totals))
 
         async def roll_stats(self, interaction: discord.Interaction):
+            """Roll the stats"""
             response = f"You rolled:\n"
             # Creates a nested rolls list for all rolls
             nest_rolls = []
@@ -168,6 +188,7 @@ class abilities(commands.Cog):
         # Creates buttons for the various stats
         @discord.ui.button(label="Str | 8", style=discord.ButtonStyle.blurple, disabled=False, row=1)
         async def str(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Str' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -178,6 +199,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Dex | 8", style=discord.ButtonStyle.blurple, disabled=False, row=2)
         async def dex(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Dex' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -188,6 +210,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Con | 8", style=discord.ButtonStyle.blurple, disabled=False, row=3)
         async def con(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Con' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -198,6 +221,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Int | 8", style=discord.ButtonStyle.blurple, disabled=False, row=1)
         async def int(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Int' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -208,6 +232,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Wis | 8", style=discord.ButtonStyle.blurple, disabled=False, row=2)
         async def wis(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Wis' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -218,6 +243,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Cha | 8", style=discord.ButtonStyle.blurple, disabled=False, row=3)
         async def cha(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Cha' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -230,11 +256,13 @@ class abilities(commands.Cog):
         # Creates button for the total point
         @discord.ui.button(label="27", style=discord.ButtonStyle.grey, disabled=True, row=1)
         async def total(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Total' button"""
             print("total")
 
         # Creates buttons for incrementing or decrementing
         @discord.ui.button(label="+", style=discord.ButtonStyle.green, disabled=True, row=2)
         async def plus(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Plus' button"""
             # Loop through the children to see which ability is selected
             for i in self.children:
                 # Check it's green (selected)
@@ -255,6 +283,7 @@ class abilities(commands.Cog):
                     return
         @discord.ui.button(label="-", style=discord.ButtonStyle.red, disabled=True, row=3)
         async def subtract(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Minus' button"""
             # Loop through the children to see which ability is selected
             for i in self.children:
                 # Check it's green (selected)
@@ -277,6 +306,7 @@ class abilities(commands.Cog):
         # Creates button for reseting
         @discord.ui.button(label="Reset", style=discord.ButtonStyle.red, disabled=False, row=4)
         async def reset(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Reset' button"""
             # Loops through the buttons
             for i in self.children:
                 if "|" in i.label:
@@ -303,6 +333,7 @@ class abilities(commands.Cog):
         # Creates button for reseting
         @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, disabled=True, row=4)
         async def confirm(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Confirm' button"""
             # Loops through the buttons
             for i in self.children:
                 if "|" in i.label:
@@ -325,6 +356,7 @@ class abilities(commands.Cog):
 
         # A function for updating the buttons
         async def update_button(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Update the buttons"""
             ability_label = Button.label.split(" | ")[0]
             # Check if the button is an ability or a score
             if ability_label in self.abilities:
@@ -343,6 +375,7 @@ class abilities(commands.Cog):
 
         # A function for updating the view
         async def update_view(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Update the view"""
             for i in self.children:
                 # Checks the selected ability
                 if i.label.startswith(self.stat):
@@ -418,6 +451,7 @@ class abilities(commands.Cog):
         # Creates buttons for the various stats
         @discord.ui.button(label="Str", style=discord.ButtonStyle.blurple, disabled = False, row=1)
         async def str(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Str' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -429,6 +463,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Dex", style=discord.ButtonStyle.blurple, disabled = False, row=2)
         async def dex(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Dex' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -440,6 +475,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Con", style=discord.ButtonStyle.blurple, disabled = False, row=3)
         async def con(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Con' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -451,6 +487,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Int", style=discord.ButtonStyle.blurple, disabled = False, row=1)
         async def int(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Int' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -462,6 +499,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Wis", style=discord.ButtonStyle.blurple, disabled = False, row=2)
         async def wis(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Wis' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -473,6 +511,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="Cha", style=discord.ButtonStyle.blurple, disabled = False, row=3)
         async def cha(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the 'Cha' button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -486,6 +525,7 @@ class abilities(commands.Cog):
         # Creates buttons for the standard array values
         @discord.ui.button(label="10", style=discord.ButtonStyle.blurple, disabled = False, row=1)
         async def first(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the first ability button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -497,6 +537,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="10", style=discord.ButtonStyle.blurple, disabled = False, row=2)
         async def second(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the second ability button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -508,6 +549,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="10", style=discord.ButtonStyle.blurple, disabled = False, row=3)
         async def third(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the third ability button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -519,6 +561,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="10", style=discord.ButtonStyle.blurple, disabled = False, row=1)
         async def fourth(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the fourth ability button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -530,6 +573,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="10", style=discord.ButtonStyle.blurple, disabled = False, row=2)
         async def fifth(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the fifth ability button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -541,6 +585,7 @@ class abilities(commands.Cog):
             await self.update_button(interaction, Button)
         @discord.ui.button(label="10", style=discord.ButtonStyle.blurple, disabled = False, row=3)
         async def sixth(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Create the sixth ability button"""
             # Checks the button style, if it's one colour, change it to the other
             if Button.style == discord.ButtonStyle.blurple:
                 Button.style = discord.ButtonStyle.green
@@ -554,6 +599,7 @@ class abilities(commands.Cog):
         # Creates a reset button
         @discord.ui.button(label="Reset", style=discord.ButtonStyle.red, disabled=False, row=3)
         async def reset(self, interaction: discord.Interaction, Button:discord.ui.Button):
+            """Create the 'Reset button"""
             # Re-assigns the tracker variables accordingly
             self.score = False
             self.number = False
@@ -568,6 +614,7 @@ class abilities(commands.Cog):
 
         # A function for updating the buttons and the view
         async def update_button(self, interaction: discord.Interaction, Button: discord.ui.Button):
+            """Update the buttons"""
             # Check if the button is an ability or a score
             if Button.label in self.abilities:
                 # Loop through the children of the view
@@ -629,6 +676,7 @@ class abilities(commands.Cog):
     
     # A function for changing the dictionary to a message
     async def dict_to_msg(self, interaction, dict, type):
+        """Convert the ability dictionary into a message"""
         # Creates lists for the abilities and numbers
         abi_list = []
         num_list = []
@@ -656,6 +704,7 @@ class abilities(commands.Cog):
         await self.assign_roles(self, interaction, abi_list, num_list)
     
     async def assign_roles(self, interaction: discord.Interaction, ability, number):
+        """Assign the ability scores role"""
         # Create a string value for the colour
         clrstr = ""
         # Assign the server
@@ -719,6 +768,7 @@ class abilities(commands.Cog):
             await interaction.user.add_roles(role)
 
     async def old_assign_roles(self, interaction: discord.Interaction, ability, number):
+        """Assign the ability scores roles"""
         # A counter for the role assignment
         count = 0
         # Assign the server
@@ -736,4 +786,5 @@ class abilities(commands.Cog):
             
 
 async def setup(client: commands.Bot) -> None:
+    """Setup the cog"""
     await client.add_cog(abilities(client))

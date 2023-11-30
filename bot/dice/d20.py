@@ -1,3 +1,12 @@
+"""
+5e Character Creator
+Discord Bot
+
+Created by Jake Thompson @jaketomo4
+
+d20.py
+"""
+
 # Standard Imports
 import random
 
@@ -14,6 +23,7 @@ class d20(commands.Cog):
     # Establishes the command related to the cog
     @app_commands.command(name="d20", description="Roll a d20!")
     async def d20(self, interaction: discord.Interaction):
+        """Slash command for d20"""
         # Gets a random number from 1 to 20
         roll = random.randint(1, 20)
         # Sends the message accordingly
@@ -22,4 +32,5 @@ class d20(commands.Cog):
 
 # Sets up the cog for the bot to register it
 async def setup(client: commands.Bot) -> None:
+    """Setup the cog"""
     await client.add_cog(d20(client))
